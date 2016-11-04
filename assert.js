@@ -6,25 +6,11 @@
  * @throws {Error}
  */
 
+ // I am not sure I like calling this assert because of the native node assert
+
 module.exports = function () {
-	var keys = Array.prototype.slice.call(arguments),
-		obj,
-		missing = [],
-		found = false;
-
-	if (keys.length > 1) {
-		obj = keys.splice(0, 1)[0] || {};
-
-		keys.some(function (key) {
-			found = obj.hasOwnProperty(key);
-			if (!found) {
-				missing.push(key);
-			}
-			return found;
-		});
-
-		if (!found && missing.length > 0) {
-			throw new Error('Missing required argument' + (missing.length > 1 ? 's' : '') + ' "' + missing.join('", "') + '"');
-		}
-	}
+	if (arguments.length === 0) { return void 0; }
+	var obj = arguments[0];
+	var matches = [].slice.call(arguments, 1).filter(function (key) { return !!obj[key]; });
+  if (matches.length === 0) { throw new Error('Expected at least one key to be included in the object'); }
 };
