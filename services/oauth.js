@@ -38,11 +38,29 @@ function join(arr) {
  */
 
 function query(req) {
-	var pairs = req.qsRaw.slice();
+	if (req.method !== 'POST') {
+		var pairs = req.qsRaw.slice();
 
-	Object.keys(req.qs).forEach(function (key) {
-		pairs.push(key + '=' + encodeURIComponent(req.qs[key]));
-	});
+		Object.keys(req.qs).forEach(function (key) {
+			pairs.push(key + '=' + encodeURIComponent(req.qs[key]));
+		});
+	} else {
+		// console.log("auth 1", req._formData._streams);
+		var streams = req._formData._streams;
+		var pairs = [];
+		// console.log("auth 2");
+		streams.forEach(function (stream, i) {
+			if (typeof stream === 'string') {
+				var match = stream.match(/name="(.*)"/);
+				//console.log("auth 3", match);
+				if (match) {
+					pairs.push(match[1] + '=' + encodeURIComponent(streams[i+1]));
+					//console.log("auth 3.5 added", match[1] + '=' + encodeURIComponent(streams[i+1]));
+				}
+			}
+		});
+		//console.log("auth 4", pairs);
+	}
 
 	return pairs.sort().join('&');
 }
@@ -167,8 +185,15 @@ OAuth.prototype.sign = function (tokenSecret) {
 		var signingKey = join([ consumerSecret, tokenSecret || '' ]);
 		var baseString = join([ req.method, req.url, query(req) ]);
 
-		req.query({
-			oauth_signature: hmac(baseString, signingKey)
-		});
+		if (req.method !== 'POST') {
+			req.query({
+				oauth_signature: hmac(baseString, signingKey)
+			});
+		} else {
+			console.log("adding singature:", baseString, signingKey);
+			req.field('oauth_signature', hmac(baseString, signingKey));
+			//req.field('api_key', consumerKey);
+
+		}
 	};
 };

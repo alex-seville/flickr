@@ -27,11 +27,21 @@ module.exports = function (consumerKey, consumerSecret, oauthToken, oauthTokenSe
 		var _end = req.end;
 
 		req.end = function (fn) {
+			console.log("sign it!");
 			this.use(oauth.sign(oauthTokenSecret));
 			_end.call(this, fn);
 		};
 
-		req.query(oauth.params());
-		req.query({ oauth_token: oauthToken });
+		if (req.method !== 'POST') {
+			req.query(oauth.params());
+			req.query({ oauth_token: oauthToken });
+
+		} else {
+			var pa = oauth.params();
+			Object.keys(pa || {}).forEach(function (key) {
+				req.field(key, pa[key]);
+			});
+			req.field('oauth_token', oauthToken);
+		}
 	};
 };
